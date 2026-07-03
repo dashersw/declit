@@ -1,0 +1,26 @@
+{
+  "name": "declit-monorepo",
+  "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dashersw/declit.git"
+  },
+  "homepage": "https://github.com/dashersw/declit#readme",
+  "bugs": {
+    "url": "https://github.com/dashersw/declit/issues"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "npm run dev -w @declit/studio",
+    "build": "npm run build -w @declit/studio",
+    "test": "npm run test -w @declit/core",
+    "typecheck": "npm run typecheck -w @declit/core && npm run typecheck -w @declit/studio"
+  }
+}

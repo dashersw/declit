@@ -1,0 +1,54 @@
+{
+  "name": "@declit/core",
+  "version": "0.1.0",
+  "description": "Declarative buildings in JSX — walls, doors, windows and constraints rendered with react-three-fiber",
+  "license": "MIT",
+  "author": "Armağan Amcalar",
+  "homepage": "https://github.com/dashersw/declit#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dashersw/declit.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/dashersw/declit/issues"
+  },
+  "keywords": [
+    "react",
+    "react-three-fiber",
+    "three.js",
+    "bim",
+    "cad",
+    "architecture",
+    "declarative",
+    "jsx"
+  ],
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "@react-three/drei": ">=10",
+    "@react-three/fiber": ">=9",
+    "react": ">=19",
+    "three": ">=0.170.0"
+  },
+  "dependencies": {
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@react-three/drei": "^10.0.0",
+    "@react-three/fiber": "^9.1.0",
+    "@types/react": "^19.1.0",
+    "react": "^19.1.0",
+    "three": "^0.180.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.0"
+  }
+}
