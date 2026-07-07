@@ -11,6 +11,7 @@ import * as THREE from 'three';
 import { useLayer } from '../layers';
 import { angleOfWall, dist } from '../model/math';
 import type { OpeningSpec, Vec2 } from '../model/types';
+import { buildWallShape } from '../model/wallShape';
 import { selectHandler, useSelected } from '../selection';
 import { useRegisterElement, useResolvedWall } from './Model';
 import { useLevel } from './Level';
@@ -101,26 +102,7 @@ export function Wall({
 
   const geometryArgs = useMemo(() => {
     if (!resolved) return null;
-    const { length, extStart, extEnd } = resolved;
-    const shape = new THREE.Shape();
-    shape.moveTo(-extStart, 0);
-    shape.lineTo(length + extEnd, 0);
-    shape.lineTo(length + extEnd, height);
-    shape.lineTo(-extStart, height);
-    shape.closePath();
-    for (const o of resolved.openings) {
-      if (!o.valid) continue;
-      const x0 = o.at - o.width / 2;
-      const x1 = o.at + o.width / 2;
-      const hole = new THREE.Path();
-      hole.moveTo(x0, o.sill);
-      hole.lineTo(x0, o.sill + o.height);
-      hole.lineTo(x1, o.sill + o.height);
-      hole.lineTo(x1, o.sill);
-      hole.closePath();
-      shape.holes.push(hole);
-    }
-    return [shape, { depth: thickness, bevelEnabled: false }] as const;
+    return buildWallShape(resolved, height, thickness);
   }, [resolved, height, thickness]);
 
   const ctxValue = useMemo<WallContextValue>(
