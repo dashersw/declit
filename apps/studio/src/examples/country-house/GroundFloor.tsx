@@ -35,7 +35,7 @@ export default function GroundFloor() {
       </Wall>
 
       {/* partition: kitchen (east) from living (west) */}
-      <Wall id="g-part" from={[6, 0.15]} to={[6, 5]} thickness={0.12} color="#efe9dd">
+      <Wall id="g-part" from={[6, 0]} to={[6, 5]} thickness={0.12} color="#efe9dd">
         <Door id="g-kitchen-door" at={4.2} width={0.9} height={2.05} open={0.2} hinge="end" />
       </Wall>
 

@@ -38,12 +38,12 @@ export default function FirstFloor() {
       </Wall>
 
       {/* cross partition splitting front bedrooms from rear ones */}
-      <Wall id="f-corridor-s" from={[0.15, 4]} to={[7.6, 4]} thickness={0.12} color="#efe9dd">
+      <Wall id="f-corridor-s" from={[0, 4]} to={[7.6, 4]} thickness={0.12} color="#efe9dd">
         <Door id="f-bed1-door" at={1.6} width={0.8} height={2.05} open={0.15} />
         <Door id="f-bed2-door" at={5.4} width={0.8} height={2.05} open={0.15} hinge="end" />
       </Wall>
       {/* master / bath split on the south side */}
-      <Wall id="f-part-v" from={[4, 0.15]} to={[4, 4]} thickness={0.12} color="#efe9dd">
+      <Wall id="f-part-v" from={[4, 0]} to={[4, 4]} thickness={0.12} color="#efe9dd">
         <Door id="f-bath-door" at={3.2} width={0.7} height={2.0} open={0.1} />
       </Wall>
 
