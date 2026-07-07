@@ -12,8 +12,12 @@ import type {
 const NODE_TOL = 0.005;
 const EPS = 1e-6;
 
+function bucketKey(bx: number, bz: number, be: number): string {
+  return `${bx}|${bz}|${be}`;
+}
+
 function nodeKey(x: number, z: number, elevation: number): string {
-  return `${Math.round(x / NODE_TOL)}|${Math.round(z / NODE_TOL)}|${Math.round(elevation / NODE_TOL)}`;
+  return bucketKey(Math.round(x / NODE_TOL), Math.round(z / NODE_TOL), Math.round(elevation / NODE_TOL));
 }
 
 class UnionFind {
@@ -83,7 +87,7 @@ export function resolveModel(elements: Iterable<ElementSpec>): ResolvedModel {
     for (const dx of [-1, 0, 1]) {
       for (const dz of [-1, 0, 1]) {
         for (const de of [-1, 0, 1]) {
-          const list = buckets.get(`${bx + dx}|${bz + dz}|${be + de}`);
+          const list = buckets.get(bucketKey(bx + dx, bz + dz, be + de));
           if (!list) continue;
           for (const otherIdx of list) {
             if (otherIdx === ep.index) continue;

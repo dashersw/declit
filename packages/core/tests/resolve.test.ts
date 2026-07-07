@@ -126,7 +126,8 @@ describe('opening validation', () => {
 
 describe('bucket-boundary tolerance', () => {
   it('joins endpoints that straddle a bucket boundary but are within tolerance', () => {
-    // 0.00249 rounds to bucket 0, 0.00251 rounds to bucket 1; distance is 0.00002
+    // a's endpoint rounds to bucket 0, b's to bucket 1, but the true distance
+    // (0.00251) is still inside NODE_TOL (0.005)
     const a = wall('a', [0, 0], [5, 0]);
     const b = wall('b', [0.00251, 0], [0.00251, 4]);
     const r = resolveModel([a, b]);
