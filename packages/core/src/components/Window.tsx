@@ -5,6 +5,9 @@ import { useOpeningRegistration } from './openings';
 import { useWall } from './Wall';
 
 const FRAME = 0.06;
+// keeps the sill ledge's top face from landing exactly on the wall opening's
+// sill reveal face, which would otherwise z-fight with it
+const SILL_CLEARANCE = 0.01;
 
 export interface WindowProps {
   id?: string;
@@ -84,7 +87,7 @@ export function Window({
               emissiveIntensity={emissiveIntensity}
             />
           </mesh>
-          <mesh castShadow position={[0, sill - 0.02, 0]}>
+          <mesh castShadow position={[0, sill - 0.02 - SILL_CLEARANCE, 0]}>
             <boxGeometry args={[width + 0.08, 0.04, t + 0.1]} />
             {frame}
           </mesh>
