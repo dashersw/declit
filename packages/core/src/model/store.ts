@@ -10,6 +10,11 @@ export interface ModelState {
 
 export type ModelStore = StoreApi<ModelState>;
 
+// each elements Map is a shallow copy of the one before it within the same
+// store; recording that lineage lets getResolved find the right `prev` to
+// diff against without mixing up snapshots from unrelated stores
+const parentOf = new WeakMap<Map<string, ElementSpec>, Map<string, ElementSpec>>();
+
 export function createModelStore(): ModelStore {
   return createStore<ModelState>()((set) => ({
     elements: new Map(),
@@ -19,6 +24,7 @@ export function createModelStore(): ModelStore {
         if (prev && JSON.stringify(prev) === JSON.stringify(spec)) return st;
         const elements = new Map(st.elements);
         elements.set(spec.id, spec);
+        parentOf.set(elements, st.elements);
         return { elements };
       }),
     unregister: (id) =>
@@ -26,6 +32,7 @@ export function createModelStore(): ModelStore {
         if (!st.elements.has(id)) return st;
         const elements = new Map(st.elements);
         elements.delete(id);
+        parentOf.set(elements, st.elements);
         return { elements };
       }),
   }));
@@ -37,7 +44,9 @@ const resolveCache = new WeakMap<Map<string, ElementSpec>, ResolvedModel>();
 export function getResolved(elements: Map<string, ElementSpec>): ResolvedModel {
   let r = resolveCache.get(elements);
   if (!r) {
-    r = resolveModel(elements.values());
+    const parent = parentOf.get(elements);
+    const parentModel = parent && resolveCache.get(parent);
+    r = resolveModel(elements.values(), parentModel ? { elements: parent, model: parentModel } : undefined);
     resolveCache.set(elements, r);
   }
   return r;
