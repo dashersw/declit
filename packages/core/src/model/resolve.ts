@@ -59,6 +59,21 @@ export function resolveModel(elements: Iterable<ElementSpec>): ResolvedModel {
     }
   }
 
+  // guard against corner adjustments that invert a wall shorter than its joints
+  for (const w of walls) {
+    const length = dist(w.from, w.to);
+    const e = ext.get(w.id)!;
+    if (length + e.start + e.end <= EPS) {
+      problems.push({ elementId: w.id, message: 'wall too short for its corner joints' });
+      const totalExt = e.start + e.end;
+      if (totalExt < 0) {
+        const scale = -length / totalExt;
+        e.start *= scale;
+        e.end *= scale;
+      }
+    }
+  }
+
   const resolvedWalls = new Map<string, ResolvedWall>();
   for (const w of walls) {
     const length = dist(w.from, w.to);

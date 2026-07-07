@@ -123,3 +123,40 @@ describe('opening validation', () => {
     expect(r.problems.some((p) => p.elementId === 'front-door')).toBe(true);
   });
 });
+
+describe('short wall guard', () => {
+  it('reports a problem and clamps extensions when a wall is too short for its joints', () => {
+    const z = wall('z', [0, 0], [0.2, 0]);
+    const a = wall('a', [0, 0], [0, 0.2]);
+    const b = wall('b', [0.2, 0], [0.2, 0.2]);
+    const r = resolveModel([z, a, b]);
+
+    expect(r.problems.some((p) => p.elementId === 'z' && /too short for its corner joints/.test(p.message))).toBe(true);
+    const resolvedZ = r.walls.get('z')!;
+    expect(resolvedZ.extStart).toBeCloseTo(-0.1);
+    expect(resolvedZ.extEnd).toBeCloseTo(-0.1);
+    expect(resolvedZ.length + resolvedZ.extStart + resolvedZ.extEnd).toBeCloseTo(0);
+  });
+
+  it('reports a problem when effective width is exactly zero', () => {
+    const z = wall('z', [0, 0], [0.24, 0], { thickness: 0.1 });
+    const a = wall('a', [0, 0], [0, 0.2]);
+    const b = wall('b', [0.24, 0], [0.24, 0.2]);
+    const r = resolveModel([z, a, b]);
+
+    expect(r.problems.some((p) => p.elementId === 'z' && /too short for its corner joints/.test(p.message))).toBe(true);
+    const resolvedZ = r.walls.get('z')!;
+    expect(resolvedZ.extStart).toBeCloseTo(-0.12);
+    expect(resolvedZ.extEnd).toBeCloseTo(-0.12);
+  });
+
+  it('leaves a normally proportioned joined wall unchanged', () => {
+    const a = wall('a', [0, 0], [5, 0]);
+    const b = wall('b', [0, 0], [0, 4]);
+    const r = resolveModel([a, b]);
+
+    expect(r.problems).toHaveLength(0);
+    expect(r.walls.get('a')!.extStart).toBeCloseTo(0.12);
+    expect(r.walls.get('b')!.extStart).toBeCloseTo(-0.12);
+  });
+});
