@@ -13,14 +13,14 @@ export interface StoriesContextValue {
 
 const StoriesContext = createContext<StoriesContextValue>({
   storyHeight: 3,
-  wallHeight: 2.7,
+  wallHeight: 2.8,
   base: 0,
 });
 
 export interface StoriesProps {
   /** floor-to-floor height */
   storyHeight?: number;
-  /** clear wall height; defaults to storyHeight - 0.3 (0.3 = default slab thickness) */
+  /** clear wall height; defaults to storyHeight - 0.2 (0.2 = default slab thickness) */
   wallHeight?: number;
   /** elevation of story 0 */
   base?: number;
@@ -29,7 +29,7 @@ export interface StoriesProps {
 
 export function Stories({ storyHeight = 3, wallHeight, base = 0, children }: StoriesProps) {
   const value = useMemo(
-    () => ({ storyHeight, wallHeight: wallHeight ?? storyHeight - 0.3, base }),
+    () => ({ storyHeight, wallHeight: wallHeight ?? storyHeight - 0.2, base }),
     [storyHeight, wallHeight, base]
   );
   return <StoriesContext.Provider value={value}>{children}</StoriesContext.Provider>;
