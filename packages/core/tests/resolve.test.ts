@@ -123,3 +123,76 @@ describe('opening validation', () => {
     expect(r.problems.some((p) => p.elementId === 'front-door')).toBe(true);
   });
 });
+
+describe('resolver memoization', () => {
+  it('reuses ResolvedWall identity when the spec and joints are unchanged', () => {
+    const a = wall('a', [0, 0], [5, 0]);
+    const b = wall('b', [0, 0], [0, 4]);
+    const elements = new Map([
+      [a.id, a],
+      [b.id, b],
+    ]);
+    const first = resolveModel(elements.values());
+
+    // a fresh Map with the same (===) spec objects, as store.ts produces on an
+    // unrelated register/unregister elsewhere in the model
+    const elements2 = new Map([
+      [a.id, a],
+      [b.id, b],
+    ]);
+    const second = resolveModel(elements2.values(), { elements, model: first });
+    expect(second.walls.get('a')).toBe(first.walls.get('a'));
+    expect(second.walls.get('b')).toBe(first.walls.get('b'));
+  });
+
+  it('keeps reporting a degenerate wall problem across reuse', () => {
+    const bad = wall('bad', [1, 1], [1, 1]);
+    const ok = wall('ok', [0, 0], [5, 0]);
+    const elements = new Map([
+      [bad.id, bad],
+      [ok.id, ok],
+    ]);
+    const first = resolveModel(elements.values());
+    expect(first.problems.some((p) => p.elementId === 'bad')).toBe(true);
+
+    const second = resolveModel(elements.values(), { elements, model: first });
+    expect(second.problems.some((p) => p.elementId === 'bad')).toBe(true);
+  });
+
+  it('rebuilds only the wall whose spec changed, keeping an unaffected neighbor identical', () => {
+    const a = wall('a', [0, 0], [5, 0]);
+    const b = wall('b', [0, 0], [0, 4]);
+    const elements = new Map([
+      [a.id, a],
+      [b.id, b],
+    ]);
+    const first = resolveModel(elements.values());
+
+    const a2 = { ...a, openings: [opening('d', 2)] };
+    const elements2 = new Map([
+      [a2.id, a2],
+      [b.id, b],
+    ]);
+    const second = resolveModel(elements2.values(), { elements, model: first });
+
+    expect(second.walls.get('a')).not.toBe(first.walls.get('a'));
+    expect(second.walls.get('b')).toBe(first.walls.get('b'));
+  });
+
+  it('defeats reuse when a new neighbor changes a wall corner extension', () => {
+    const c = wall('c', [10, 10], [15, 10]);
+    const elements = new Map([[c.id, c]]);
+    const first = resolveModel(elements.values());
+    expect(first.walls.get('c')!.extStart).toBeCloseTo(0);
+
+    const d = wall('d', [10, 10], [10, 14]);
+    const elements2 = new Map([
+      [c.id, c],
+      [d.id, d],
+    ]);
+    const second = resolveModel(elements2.values(), { elements, model: first });
+
+    expect(second.walls.get('c')).not.toBe(first.walls.get('c'));
+    expect(second.walls.get('c')!.extStart).toBeCloseTo(0.12);
+  });
+});

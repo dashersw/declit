@@ -24,7 +24,10 @@ function nodeKey(x: number, z: number, elevation: number): string {
  * other wall shrinks back by half the primary's thickness. This produces clean
  * butt joints for L, T, X and straight junctions at any wall thickness.
  */
-export function resolveModel(elements: Iterable<ElementSpec>): ResolvedModel {
+export function resolveModel(
+  elements: Iterable<ElementSpec>,
+  prev?: { elements: Map<string, ElementSpec>; model: ResolvedModel }
+): ResolvedModel {
   const walls: WallSpec[] = [];
   for (const el of elements) if (el.type === 'wall') walls.push(el);
 
@@ -62,6 +65,19 @@ export function resolveModel(elements: Iterable<ElementSpec>): ResolvedModel {
   const resolvedWalls = new Map<string, ResolvedWall>();
   for (const w of walls) {
     const length = dist(w.from, w.to);
+    const e = ext.get(w.id)!;
+
+    // spec identity + unchanged joint extents means the resolved wall is
+    // provably identical, so reuse it instead of rebuilding openings/geometry
+    const prevWall = prev?.elements.get(w.id) === w ? prev.model.walls.get(w.id) : undefined;
+    if (prevWall && prevWall.extStart === e.start && prevWall.extEnd === e.end) {
+      resolvedWalls.set(w.id, prevWall);
+      for (const o of prevWall.openings) {
+        for (const p of o.problems) problems.push({ elementId: o.id, message: p });
+      }
+      continue;
+    }
+
     const openings: ResolvedOpening[] = [...w.openings]
       .sort((a, b) => a.at - b.at)
       .map((o) => ({ ...o, valid: true, problems: [] }));
@@ -88,7 +104,6 @@ export function resolveModel(elements: Iterable<ElementSpec>): ResolvedModel {
       for (const p of o.problems) problems.push({ elementId: o.id, message: p });
     }
 
-    const e = ext.get(w.id)!;
     resolvedWalls.set(w.id, {
       ...w,
       length,
