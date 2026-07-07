@@ -8,13 +8,31 @@ import type {
   WallSpec,
 } from './types';
 
-/** endpoints closer than this (per axis bucket) are considered the same corner node */
+/** endpoints within this radius (x, z, and elevation) are considered the same corner node */
 const NODE_TOL = 0.005;
 const EPS = 1e-6;
 
 function nodeKey(x: number, z: number, elevation: number): string {
   return `${Math.round(x / NODE_TOL)}|${Math.round(z / NODE_TOL)}|${Math.round(elevation / NODE_TOL)}`;
 }
+
+class UnionFind {
+  private parent: number[] = [];
+  makeSet(x: number) {
+    this.parent[x] = x;
+  }
+  find(x: number): number {
+    if (this.parent[x] !== x) this.parent[x] = this.find(this.parent[x]);
+    return this.parent[x];
+  }
+  union(a: number, b: number) {
+    const ra = this.find(a);
+    const rb = this.find(b);
+    if (ra !== rb) this.parent[rb] = ra;
+  }
+}
+
+type Endpoint = { wall: WallSpec; end: 'start' | 'end'; index: number };
 
 /**
  * Pure constraint pass over the raw element specs.
@@ -32,7 +50,9 @@ export function resolveModel(elements: Iterable<ElementSpec>): ResolvedModel {
   const ext = new Map<string, { start: number; end: number }>();
   for (const w of walls) ext.set(w.id, { start: 0, end: 0 });
 
-  const nodes = new Map<string, { wall: WallSpec; end: 'start' | 'end' }[]>();
+  // collect joinable endpoints and bucket them for fast neighbor lookup
+  const endpoints: Endpoint[] = [];
+  const buckets = new Map<string, number[]>();
   for (const w of walls) {
     if (dist(w.from, w.to) < NODE_TOL * 2) {
       problems.push({ elementId: w.id, message: 'wall is degenerate (zero length)' });
@@ -40,15 +60,53 @@ export function resolveModel(elements: Iterable<ElementSpec>): ResolvedModel {
     }
     if (!w.join) continue;
     for (const end of ['start', 'end'] as const) {
+      const ep: Endpoint = { wall: w, end, index: endpoints.length };
+      endpoints.push(ep);
       const p = end === 'start' ? w.from : w.to;
       const key = nodeKey(p[0], p[1], w.elevation);
-      let list = nodes.get(key);
-      if (!list) nodes.set(key, (list = []));
-      list.push({ wall: w, end });
+      let list = buckets.get(key);
+      if (!list) buckets.set(key, (list = []));
+      list.push(ep.index);
     }
   }
 
-  for (const list of nodes.values()) {
+  // cluster endpoints whose true 3D distance is within NODE_TOL
+  const uf = new UnionFind();
+  for (let i = 0; i < endpoints.length; i++) uf.makeSet(i);
+
+  for (const ep of endpoints) {
+    const p = ep.end === 'start' ? ep.wall.from : ep.wall.to;
+    const bx = Math.round(p[0] / NODE_TOL);
+    const bz = Math.round(p[1] / NODE_TOL);
+    const be = Math.round(ep.wall.elevation / NODE_TOL);
+
+    for (const dx of [-1, 0, 1]) {
+      for (const dz of [-1, 0, 1]) {
+        for (const de of [-1, 0, 1]) {
+          const list = buckets.get(`${bx + dx}|${bz + dz}|${be + de}`);
+          if (!list) continue;
+          for (const otherIdx of list) {
+            if (otherIdx === ep.index) continue;
+            const other = endpoints[otherIdx];
+            const op = other.end === 'start' ? other.wall.from : other.wall.to;
+            if (Math.hypot(p[0] - op[0], p[1] - op[1], ep.wall.elevation - other.wall.elevation) < NODE_TOL) {
+              uf.union(ep.index, otherIdx);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  const clusters = new Map<number, Endpoint[]>();
+  for (let i = 0; i < endpoints.length; i++) {
+    const root = uf.find(i);
+    let list = clusters.get(root);
+    if (!list) clusters.set(root, (list = []));
+    list.push(endpoints[i]);
+  }
+
+  for (const list of clusters.values()) {
     if (list.length < 2) continue;
     const sorted = [...list].sort((a, b) => (a.wall.id < b.wall.id ? -1 : 1));
     const [primary, ...rest] = sorted;
