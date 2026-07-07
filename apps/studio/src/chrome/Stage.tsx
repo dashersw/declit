@@ -86,6 +86,7 @@ export function Stage({ store, designKey, fitKey, onRuntimeError, children }: St
       shadows
       camera={{ position: [22, 16, 22], fov: 42 }}
       dpr={[1, 2]}
+      gl={{ logarithmicDepthBuffer: true }}
       onPointerMissed={() => selectElement(null)}
       onCreated={(state) => {
         (window as unknown as Record<string, unknown>).__declitScene = state.scene;
