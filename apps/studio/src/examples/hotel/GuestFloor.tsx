@@ -104,10 +104,10 @@ export default function GuestFloor({
 
       {/* party walls between neighboring rooms, both bands */}
       {rooms.slice(1).map((i) => (
-        <Wall key={`ps${i}`} id={`h${level}-party-s-${i}`} from={[i * roomW, 0.15]} to={[i * roomW, csouth]} thickness={P} color="#e7e1d4" />
+        <Wall key={`ps${i}`} id={`h${level}-party-s-${i}`} from={[i * roomW, 0]} to={[i * roomW, csouth]} thickness={P} color="#e7e1d4" />
       ))}
       {rooms.slice(1).map((i) => (
-        <Wall key={`pn${i}`} id={`h${level}-party-n-${i}`} from={[i * roomW, cnorth]} to={[i * roomW, D - 0.15]} thickness={P} color="#e7e1d4" />
+        <Wall key={`pn${i}`} id={`h${level}-party-n-${i}`} from={[i * roomW, cnorth]} to={[i * roomW, D]} thickness={P} color="#e7e1d4" />
       ))}
 
       {/*

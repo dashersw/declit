@@ -123,3 +123,100 @@ describe('opening validation', () => {
     expect(r.problems.some((p) => p.elementId === 'front-door')).toBe(true);
   });
 });
+
+describe('T-into-face joins', () => {
+  it('shrinks a wall that ends on another wall face', () => {
+    const main = wall('main', [0, 0], [5, 0]);
+    const tee = wall('tee', [2.5, 0], [2.5, 3]);
+    const r = resolveModel([main, tee]);
+    expect(r.walls.get('tee')!.extStart).toBeCloseTo(-0.12);
+    expect(r.walls.get('main')!.extStart).toBeCloseTo(0);
+    expect(r.walls.get('main')!.extEnd).toBeCloseTo(0);
+  });
+
+  it('uses the landed-on wall thickness for the shrink amount', () => {
+    const main = wall('main', [0, 0], [5, 0], { thickness: 0.3 });
+    const tee = wall('tee', [2.5, 0], [2.5, 3]);
+    const r = resolveModel([main, tee]);
+    expect(r.walls.get('tee')!.extStart).toBeCloseTo(-0.15);
+  });
+
+  it('resolves bathroom-style walls without manual t/2 offset', () => {
+    const t = 0.24;
+    const exterior = wall('exterior', [0, 0], [0, 5], { thickness: t });
+    const partition = wall('partition', [0, 3.2], [2.6, 3.2], { thickness: 0.1 });
+    const r = resolveModel([exterior, partition]);
+    expect(r.walls.get('partition')!.extStart).toBeCloseTo(-t / 2);
+    expect(r.walls.get('exterior')!.extStart).toBeCloseTo(0);
+  });
+
+  it('uses the node path when an endpoint meets another endpoint', () => {
+    const a = wall('a', [0, 0], [5, 0]);
+    const b = wall('b', [5, 0], [5, 3]);
+    const r = resolveModel([a, b]);
+    expect(r.walls.get('a')!.extEnd).toBeCloseTo(0.12);
+    expect(r.walls.get('b')!.extStart).toBeCloseTo(-0.12);
+  });
+
+  it('does not T-join when the projection is too close to the other wall endpoint', () => {
+    const a = wall('a', [0, 0], [2, 0]);
+    const b = wall('b', [1.997, 0], [1.997, 3]);
+    const r = resolveModel([a, b]);
+    expect(r.walls.get('b')!.extStart).toBeCloseTo(0);
+  });
+
+  it('does not join when the projection falls outside the other wall', () => {
+    const a = wall('a', [0, 0], [2, 0]);
+    const b = wall('b', [3, 0], [3, 3]);
+    const r = resolveModel([a, b]);
+    expect(r.walls.get('b')!.extStart).toBeCloseTo(0);
+  });
+
+  it('picks the closest wall face when several are near', () => {
+    const a = wall('a', [0, 0], [5, 0]);
+    const c = wall('c', [0, 2], [5, 2]);
+    const tee = wall('tee', [2.5, -1], [2.5, 0.001]);
+    const r = resolveModel([a, c, tee]);
+    expect(r.walls.get('tee')!.extEnd).toBeCloseTo(-0.12);
+  });
+
+  it('can shrink both ends of a wall when each lands on a different face', () => {
+    const a = wall('a', [0, 0], [5, 0]);
+    const b = wall('b', [0, 3], [5, 3]);
+    const bridge = wall('bridge', [1, 0], [1, 3]);
+    const r = resolveModel([a, b, bridge]);
+    expect(r.walls.get('bridge')!.extStart).toBeCloseTo(-0.12);
+    expect(r.walls.get('bridge')!.extEnd).toBeCloseTo(-0.12);
+  });
+
+  it('walls on different elevations do not T-join', () => {
+    const main = wall('main', [0, 0], [5, 0]);
+    const tee = wall('tee', [2.5, 0], [2.5, 3], { elevation: 3 });
+    const r = resolveModel([main, tee]);
+    expect(r.walls.get('tee')!.extStart).toBeCloseTo(0);
+  });
+
+  it('join: false opts a wall out of T-joining', () => {
+    const main = wall('main', [0, 0], [5, 0]);
+    const tee = wall('tee', [2.5, 0], [2.5, 3], { join: false });
+    const r = resolveModel([main, tee]);
+    expect(r.walls.get('tee')!.extStart).toBeCloseTo(0);
+  });
+
+  it('does not land on a wall that has join: false', () => {
+    const main = wall('main', [0, 0], [5, 0], { join: false });
+    const tee = wall('tee', [2.5, 0], [2.5, 3]);
+    const r = resolveModel([main, tee]);
+    expect(r.walls.get('tee')!.extStart).toBeCloseTo(0);
+  });
+
+  it('shrinks multiple walls that land on the same face', () => {
+    const main = wall('main', [0, 0], [5, 0]);
+    const left = wall('left', [1, 0], [1, 2]);
+    const right = wall('right', [4, 0], [4, 2]);
+    const r = resolveModel([main, left, right]);
+    expect(r.walls.get('left')!.extStart).toBeCloseTo(-0.12);
+    expect(r.walls.get('right')!.extStart).toBeCloseTo(-0.12);
+    expect(r.walls.get('main')!.extStart).toBeCloseTo(0);
+  });
+});

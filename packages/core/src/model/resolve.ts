@@ -1,4 +1,4 @@
-import { dist } from './math';
+import { dist, pointToSegment } from './math';
 import type {
   ElementSpec,
   ModelProblem,
@@ -56,6 +56,36 @@ export function resolveModel(elements: Iterable<ElementSpec>): ResolvedModel {
     ext.get(primary.wall.id)![primary.end] += maxOther / 2;
     for (const e of rest) {
       ext.get(e.wall.id)![e.end] -= primary.wall.thickness / 2;
+    }
+  }
+
+  // second pass: endpoints that land on another wall's face (not at its ends)
+  // shrink so they butt the near face instead of passing through the solid
+  for (const w of walls) {
+    if (!w.join) continue;
+    if (dist(w.from, w.to) < NODE_TOL * 2) continue;
+    for (const end of ['start', 'end'] as const) {
+      const p = end === 'start' ? w.from : w.to;
+      const key = nodeKey(p[0], p[1], w.elevation);
+      const list = nodes.get(key);
+      if (list && list.length >= 2) continue;
+
+      let best: { wall: WallSpec; distance: number } | null = null;
+      for (const other of walls) {
+        if (other === w) continue;
+        if (!other.join) continue;
+        if (other.elevation !== w.elevation) continue;
+        if (dist(other.from, other.to) < NODE_TOL * 2) continue;
+
+        const { distance, point } = pointToSegment(p, other.from, other.to);
+        if (distance >= NODE_TOL) continue;
+        if (dist(point, other.from) < NODE_TOL || dist(point, other.to) < NODE_TOL) continue;
+
+        if (!best || distance < best.distance) best = { wall: other, distance };
+      }
+      if (best) {
+        ext.get(w.id)![end] -= best.wall.thickness / 2;
+      }
     }
   }
 

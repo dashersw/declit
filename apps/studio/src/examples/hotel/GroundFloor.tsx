@@ -48,7 +48,7 @@ export default function GroundFloor({ length: L, depth: D }: { length: number; d
       </Wall>
 
       {/* lobby / restaurant divider with a wide opening */}
-      <Wall id="l-divider" from={[L * 0.5, 0.15]} to={[L * 0.5, D - 0.15]} thickness={0.15} color="#e7e1d4">
+      <Wall id="l-divider" from={[L * 0.5, 0]} to={[L * 0.5, D]} thickness={0.15} color="#e7e1d4">
         <Door id="l-div-door" at={D / 2} width={2.0} height={2.4} open={1} />
       </Wall>
 
