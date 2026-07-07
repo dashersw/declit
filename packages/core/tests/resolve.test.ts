@@ -123,3 +123,31 @@ describe('opening validation', () => {
     expect(r.problems.some((p) => p.elementId === 'front-door')).toBe(true);
   });
 });
+
+describe('bucket-boundary tolerance', () => {
+  it('joins endpoints that straddle a bucket boundary but are within tolerance', () => {
+    // a's endpoint rounds to bucket 0, b's to bucket 1, but the true distance
+    // (0.00251) is still inside NODE_TOL (0.005)
+    const a = wall('a', [0, 0], [5, 0]);
+    const b = wall('b', [0.00251, 0], [0.00251, 4]);
+    const r = resolveModel([a, b]);
+    expect(r.walls.get('a')!.extStart).toBeCloseTo(0.12);
+    expect(r.walls.get('b')!.extStart).toBeCloseTo(-0.12);
+  });
+
+  it('does not join endpoints just outside the tolerance radius', () => {
+    const a = wall('a', [0, 0], [5, 0]);
+    const b = wall('b', [0.0051, 0], [0.0051, 4]);
+    const r = resolveModel([a, b]);
+    expect(r.walls.get('a')!.extStart).toBeCloseTo(0);
+    expect(r.walls.get('b')!.extStart).toBeCloseTo(0);
+  });
+
+  it('uses a 3D radius so elevation separation prevents joining', () => {
+    const a = wall('a', [0, 0], [5, 0]);
+    const b = wall('b', [0.002, 0.001], [0.002, 4], { elevation: 0.0049 });
+    const r = resolveModel([a, b]);
+    expect(r.walls.get('a')!.extStart).toBeCloseTo(0);
+    expect(r.walls.get('b')!.extStart).toBeCloseTo(0);
+  });
+});
